@@ -202,7 +202,7 @@ class Computer < Player
 end
 
 #------------------------------------------------------------------------------
-# Inherits random move from parent Computer
+# Inherits choose method giving random move from parent Computer
 class R2D2 < Computer
   def set_name
     self.name = self.class
@@ -298,43 +298,9 @@ class Move
     @value = value
   end
 
-  # def scissors?
-  #   @value == 'scissors'
-  # end
-
-  # def rock?
-  #   @value == 'rock'
-  # end
-
-  # def paper?
-  #   @value == 'paper'
-  # end
-
-  # def lizard?
-  #   @value == 'lizard'
-  # end
-
-  # def spock?
-  #   @value == 'spock'
-  # end
-
   def to_s
     @value
   end
-
-  # def >(other_move)
-  #   if rock?
-  #     other_move.scissors? || other_move.lizard?
-  #   elsif paper?
-  #     other_move.rock? || other_move.spock?
-  #   elsif scissors?
-  #     other_move.paper? || other_move.lizard?
-  #   elsif lizard?
-  #     other_move.paper? || other_move.spock?
-  #   elsif spock?
-  #     other_move.scissors? || other_move.rock?
-  #   end
-  # end
 
   def >(other_move)
     WIN_COMBOS[value.to_sym].include?(other_move.value.to_sym)
