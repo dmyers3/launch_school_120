@@ -70,7 +70,6 @@ module Displayable
   end
 end
 
-#-------------------------------------------------------------------------------
 class RPSGame
   include Displayable
 
@@ -98,8 +97,7 @@ class RPSGame
       puts "Sorry, please enter y or n"
     end
 
-    return true if answer == 'y'
-    false
+    answer == 'y'
   end
 
   def end_of_game?
@@ -144,7 +142,6 @@ class RPSGame
   end
 end
 
-#------------------------------------------------------------------------------
 class Player
   attr_accessor :move, :name, :score, :history
 
@@ -155,19 +152,18 @@ class Player
   end
 end
 
-#------------------------------------------------------------------------------
 class Human < Player
   include Displayable
 
   def set_name
-    n = nil
+    human_name = nil
     loop do
       puts "What's your name?"
-      n = gets.chomp
-      break unless n.strip.empty?
+      human_name = gets.chomp
+      break unless human_name.strip.empty?
       puts "Sorry, must enter a value"
     end
-    self.name = n
+    self.name = human_name
     screen_clear
   end
 
@@ -183,7 +179,6 @@ class Human < Player
   end
 end
 
-#------------------------------------------------------------------------------
 class Computer < Player
   def self.select
     random_choice = rand(1..5)
@@ -201,7 +196,6 @@ class Computer < Player
   end
 end
 
-#------------------------------------------------------------------------------
 # Inherits choose method giving random move from parent Computer
 class R2D2 < Computer
   def set_name
@@ -209,7 +203,6 @@ class R2D2 < Computer
   end
 end
 
-#------------------------------------------------------------------------------
 # Always chooses rock
 class Hal < Computer
   def set_name
@@ -221,7 +214,6 @@ class Hal < Computer
   end
 end
 
-#------------------------------------------------------------------------------
 # Never repeats his last move
 class Chappie < Computer
   def set_name
@@ -239,7 +231,6 @@ class Chappie < Computer
   end
 end
 
-#------------------------------------------------------------------------------
 # Only chooses from original 3 move choices, favoring paper
 class Sonny < Computer
   def set_name
@@ -248,18 +239,14 @@ class Sonny < Computer
 
   def choose
     choice = rand(1..10)
-    case choice
-    when (1..6)
-      self.move = Move.new('paper')
-    when (7..9)
-      self.move = Move.new('scissors')
-    when 10
-      self.move = Move.new('rock')
-    end
+    self.move = case choice
+                when (1..6) then Move.new('paper')
+                when (7..9) then Move.new('scissors')
+                when 10     then Move.new('rock')
+                end
   end
 end
 
-#------------------------------------------------------------------------------
 # Always chooses same move if it won the previous round, else chooses randomly
 class Terminator < Computer
   attr_accessor :score_comparison
@@ -282,7 +269,6 @@ class Terminator < Computer
   end
 end
 
-#------------------------------------------------------------------------------
 class Move
   VALID_CHOICES = { r: 'rock', p: 'paper', x: 'scissors',
                     s: 'spock', l: 'lizard' }.freeze
@@ -306,6 +292,5 @@ class Move
     WIN_COMBOS[value.to_sym].include?(other_move.value.to_sym)
   end
 end
-#------------------------------------------------------------------------------
 
 RPSGame.new.play
