@@ -132,7 +132,7 @@ end
 
 class TTTGame
   POINTS_TO_WIN = 3
-  
+
   # Choose :human or :computer
   FIRST_TO_MOVE = :human
 
