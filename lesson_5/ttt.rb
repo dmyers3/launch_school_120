@@ -132,6 +132,7 @@ end
 
 class TTTGame
   POINTS_TO_WIN = 3
+  
   # Choose :human or :computer
   FIRST_TO_MOVE = :human
 
@@ -271,7 +272,7 @@ class TTTGame
   # 1st priority is to win, 2nd is to block human, 3rd is choose middle square,
   # last option is random square
   def computer_moves
-    key = comp_win_key || comp_block_key || middle_square ||
+    key = comp_win_key || comp_block_key || middle_square_key ||
           board.unmarked_keys.sample
     board[key] = computer.marker
   end
@@ -293,7 +294,7 @@ class TTTGame
     nil
   end
 
-  def middle_square
+  def middle_square_key
     return 5 if board.unmarked_keys.include?(5)
     nil
   end
