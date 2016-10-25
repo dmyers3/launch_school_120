@@ -180,6 +180,7 @@ class TTTGame
       break if board.someone_won? || board.full?
       clear_screen_and_display_board if human_turn?
     end
+    display_board
     display_result
     update_score
     reset_board
@@ -273,15 +274,6 @@ class TTTGame
     key = comp_win_key || comp_block_key || middle_square ||
           board.unmarked_keys.sample
     board[key] = computer.marker
-    # if comp_win_key
-    #   board[comp_win_key] = computer.marker
-    # elsif comp_block_key
-    #   board[comp_block_key] = computer.marker
-    # elsif board.unmarked_keys.include?(5)
-    #   board[5] = computer.marker
-    # else
-    #   board[board.unmarked_keys.sample] = computer.marker
-    # end
   end
 
   # iterates through unmarked squares, seeing if there are any winning combos
@@ -315,11 +307,10 @@ class TTTGame
   end
 
   def display_result
-    display_board
     if board.winning_marker == human.marker
-      puts "#{human.name} won this round!"
+      puts "#{human.name} won!"
     elsif board.winning_marker == computer.marker
-      puts "#{computer.name} won this round!"
+      puts "#{computer.name} won!"
     else
       puts "It's a tie!"
     end
@@ -355,7 +346,6 @@ class TTTGame
   def reset_board
     board.reset
     @current_marker = first_move
-    # clear
   end
 
   def reset_scores
