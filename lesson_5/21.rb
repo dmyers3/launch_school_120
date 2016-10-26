@@ -27,7 +27,7 @@ module Displayable
   end
 
   def display_goodbye_message
-    puts 'Thanks for playing 21. Goodbye!'
+    puts 'Thanks for playing Twenty-One. Goodbye!'
   end
 
   def clear_screen
@@ -113,10 +113,6 @@ class Dealer < Participant
 end
 
 class Deck
-  SUITS_CHAR = ["\u2665", "\u2666", "\u2660", "\u2663"].freeze
-  VALUES = ['2', '3', '4', '5', '6', '7', '8', '9',
-            'T', 'J', 'Q', 'K', 'A'].freeze
-
   attr_reader :cards
 
   def initialize
@@ -125,16 +121,16 @@ class Deck
     shuffle_deck
   end
 
-  def deal(participant)
+  def deal_one(participant)
     participant.hand << cards.pop
   end
 
   private
 
   def populate_deck
-    4.times do |suit|
-      13.times do |value|
-        cards << Card.new(SUITS_CHAR[suit], VALUES[value])
+    Card::SUITS_CHAR.each do |suit|
+      Card::VALUES.each do |value|
+        cards << Card.new(suit, value)
       end
     end
   end
@@ -145,6 +141,10 @@ class Deck
 end
 
 class Card
+  SUITS_CHAR = ["\u2665", "\u2666", "\u2660", "\u2663"].freeze
+  VALUES = ['2', '3', '4', '5', '6', '7', '8', '9',
+            'T', 'J', 'Q', 'K', 'A'].freeze
+
   attr_accessor :hidden_value, :hidden_suit, :suit, :value
 
   def initialize(suit, value)
@@ -173,7 +173,7 @@ class Game
   POINTS_TO_WIN = 3
 
   attr_reader :deck, :player, :dealer
-  attr_accessor :winner
+  attr_accessor :result
 
   def initialize
     @deck = Deck.new
@@ -185,14 +185,7 @@ class Game
     display_welcome_message
     loop do
       loop do
-        display_score
-        deal_initial_cards
-        display_hands
-        participants_play
-        determine_winner
-        show_result
-        update_score
-        reset_game
+        play_one_round
         break if end_of_game?
       end
       display_overall_winner
@@ -204,10 +197,21 @@ class Game
 
   private
 
+  def play_one_round
+    display_score
+    deal_initial_cards
+    display_hands
+    participants_play
+    determine_result
+    show_result
+    update_score
+    reset_game
+  end
+
   def deal_initial_cards
     2.times do
-      deck.deal(player)
-      deck.deal(dealer)
+      deck.deal_one(player)
+      deck.deal_one(dealer)
     end
     dealer.hand[0].hide
   end
@@ -218,27 +222,29 @@ class Game
     display_hand(player)
   end
 
-  def display_hand(participant)
-    puts "#{participant.name} is showing: #{participant.total} "
-    participant.hand.size.times { print "  ______ " }
+  # rubocop:disable Metrics/AbcSize
+  def display_hand(plyr)
+    puts "#{plyr.name} is showing: #{plyr.total} "
+    plyr.hand.size.times { print "  ______ " }
     puts ""
-    participant.hand.size.times { |num| print " |#{participant.hand[num].suit}     |" }
+    plyr.hand.size.times { |num| print " |#{plyr.hand[num].suit}     |" }
     puts ""
-    participant.hand.size.times { print " |      |" }
+    plyr.hand.size.times { print " |      |" }
     puts ""
-    participant.hand.size.times { |num| print " |  #{participant.hand[num].value}   |" }
+    plyr.hand.size.times { |num| print " |  #{plyr.hand[num].value}   |" }
     puts ""
-    participant.hand.size.times { print " |      |" }
+    plyr.hand.size.times { print " |      |" }
     puts ""
-    participant.hand.size.times { |num| print " |_____#{participant.hand[num].suit}|" }
+    plyr.hand.size.times { |num| print " |_____#{plyr.hand[num].suit}|" }
     puts ""
   end
+  # rubocop:enable Metrics/AbcSize
 
   def player_turn
     while player.total <= GAME_TGT
       case player.choose_hit_or_stay
       when 'h'
-        deck.deal(player)
+        deck.deal_one(player)
         display_hands
       when 's'
         break
@@ -257,40 +263,44 @@ class Game
     display_hands
     while dealer.total < DLR_STAY
       sleep 2
-      deck.deal(dealer)
+      deck.deal_one(dealer)
       display_hands
     end
   end
 
-  def determine_winner
-    self.winner = if player.busted? || (dealer.total > player.total &&
-                                       !dealer.busted?)
-                    :dealer
-                  elsif dealer.busted? || player.total > dealer.total
-                    :player
+  def determine_result
+    self.result = if player.busted?
+                    :bust
+                  elsif dealer.busted?
+                    :dealer_bust
+                  elsif player.total > dealer.total
+                    :win
+                  elsif dealer.total > player.total
+                    :lose
                   else
                     :tie
                   end
   end
 
   def show_result
-    if player.busted?
+    case result
+    when :bust
       puts "#{player.name} busted. #{dealer.name} wins!"
-    elsif dealer.busted?
+    when :dealer_bust
       puts "#{dealer.name} busted. #{player.name} wins!"
-    elsif player.total > dealer.total
+    when :win
       puts "#{player.name} wins!"
-    elsif dealer.total > player.total
+    when :lose
       puts "#{dealer.name} wins!"
     else
       puts "It's a tie!"
     end
-    sleep 4
+    sleep 2
   end
 
   def update_score
-    player.score += 1 if winner == :player
-    dealer.score += 1 if winner == :dealer
+    player.score += 1 if result == :win || result == :dealer_bust
+    dealer.score += 1 if result == :lose || result == :bust
   end
 
   def end_of_game?
