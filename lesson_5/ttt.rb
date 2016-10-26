@@ -1,5 +1,70 @@
 require 'pry'
 
+module Displayable
+  def display_welcome_message
+    puts "Welome to Tic Tac Toe, #{human.name}!"
+    puts "You are playing #{computer.name}"
+    puts "The first to #{TTTGame::POINTS_TO_WIN} wins!"
+    puts ''
+  end
+
+  def display_overall_winner
+    if human.score > computer.score
+      puts "#{human.name} won the whole game!"
+    else
+      puts "#{computer.name} won the whole game!"
+    end
+  end
+
+  def display_goodbye_message
+    puts 'Thanks for playing Tic Tac Toe. Goodbye!'
+  end
+
+  def display_board
+    puts "You're the #{human.marker}, Computer is the #{computer.marker}."
+    puts ''
+    board.draw
+    puts ''
+  end
+
+  def display_score
+    puts "-----------------------------------"
+    puts "The score is:"
+    puts "#{human.name}: #{human.score}"
+    puts "#{computer.name}: #{computer.score}"
+    puts "-----------------------------------"
+  end
+
+  def clear_screen_and_display_board
+    clear
+    display_board
+  end
+
+  def clear
+    system 'clear'
+  end
+
+  def display_result
+    if board.winning_marker == human.marker
+      puts "#{human.name} won!"
+    elsif board.winning_marker == computer.marker
+      puts "#{computer.name} won!"
+    else
+      puts "It's a tie!"
+    end
+  end
+
+  def display_play_again_message
+    puts "Let's play again!"
+    puts ''
+  end
+
+  def joinor(arr, join_char = ', ', last_word = 'or')
+    arr[arr.length - 1] = "#{last_word} #{arr[arr.length - 1]}" if arr.size > 1
+    arr.size == 2 ? arr.join(' ') : arr.join(join_char)
+  end
+end
+
 class Board
   WINNING_COMBOS = [[1, 2, 3], [1, 4, 7], [1, 5, 9], [2, 5, 8],
                     [3, 5, 7], [3, 6, 9], [4, 5, 6], [7, 8, 9]].freeze
@@ -101,6 +166,8 @@ class Player
 end
 
 class Human < Player
+  include Displayable
+
   def set_name
     human_name = nil
     loop do
@@ -122,21 +189,82 @@ class Human < Player
     end
     self.marker = human_marker
   end
+
+  def move(brd)
+    key = nil
+    loop do
+      puts('Which square do you want to select?')
+      puts "Choose a square (#{joinor(brd.unmarked_keys)}): "
+      puts('The numbers refer to the squares from left-right then top-bottom')
+      puts("Ex: top-left is '1', top-right is '3' and bottom-right is '9'")
+      key = gets.chomp.to_i
+      break if brd.unmarked_keys.include?(key)
+      puts("That isn't a valid choice! Make sure that the square isn't taken")
+    end
+    brd[key] = marker
+  end
+
+  def turn?(current_mrkr)
+    current_mrkr == marker
+  end
 end
 
 class Computer < Player
   def set_name
     self.name = ['R2D2', 'Chappie', 'Sonny', 'Terminator', 'Hal'].sample
   end
+
+  # 1st priority is to win, 2nd is to block human, 3rd is choose middle square,
+  # last option is random square
+  def move(brd, human_marker)
+    key = comp_win_key(brd) || comp_block_key(brd, human_marker) ||
+          middle_square_key(brd) || brd.unmarked_keys.sample
+    brd[key] = marker
+  end
+
+  private
+
+  # iterates through unmarked squares, seeing if there are any winning combos
+  # where two squares in a line are marked with same marker and 3rd square in
+  # line is empty. If so returns key, and if not returns nil
+  def key_for_three_in_row(brd, mark = marker)
+    brd.unmarked_keys.each do |key|
+      win_combos_with_key = Board::WINNING_COMBOS.select do |combo|
+        combo.include?(key)
+      end
+      win_combos_wout_key = win_combos_with_key.map { |combo| combo - [key] }
+      win_combos_wout_key.each do |array_check|
+        return key if brd[array_check[0]] == mark &&
+                      brd[array_check[1]] == mark
+      end
+    end
+    nil
+  end
+
+  def middle_square_key(brd)
+    return 5 if brd.unmarked_keys.include?(5)
+    nil
+  end
+
+  def comp_win_key(brd)
+    key_for_three_in_row(brd)
+  end
+
+  def comp_block_key(brd, human_marker)
+    key_for_three_in_row(brd, human_marker)
+  end
 end
 
 class TTTGame
+  include Displayable
+
   POINTS_TO_WIN = 3
 
   # Choose :human or :computer
   FIRST_TO_MOVE = :human
 
   attr_reader :board, :human, :computer
+  attr_accessor :current_marker
 
   def initialize
     @board = Board.new
@@ -179,7 +307,7 @@ class TTTGame
     loop do
       current_player_moves
       break if board.someone_won? || board.full?
-      clear_screen_and_display_board if human_turn?
+      clear_screen_and_display_board if human.turn?(current_marker)
     end
     display_board
     display_result
@@ -195,125 +323,13 @@ class TTTGame
     end
   end
 
-  def display_welcome_message
-    puts "Welome to Tic Tac Toe, #{human.name}!"
-    puts "You are playing #{computer.name}"
-    puts "The first to #{POINTS_TO_WIN} wins!"
-    puts ''
-  end
-
-  def display_overall_winner
-    if human.score > computer.score
-      puts "#{human.name} won the whole game!"
-    else
-      puts "#{computer.name} won the whole game!"
-    end
-  end
-
-  def display_goodbye_message
-    puts 'Thanks for playing Tic Tac Toe. Goodbye!'
-  end
-
-  def display_board
-    puts "You're the #{human.marker}, Computer is the #{computer.marker}."
-    puts ''
-    board.draw
-    puts ''
-  end
-
-  def display_score
-    puts "-----------------------------------"
-    puts "The score is:"
-    puts "#{human.name}: #{human.score}"
-    puts "#{computer.name}: #{computer.score}"
-    puts "-----------------------------------"
-  end
-
-  def clear_screen_and_display_board
-    clear
-    display_board
-  end
-
   def current_player_moves
-    if human_turn?
-      human_moves
-      @current_marker = computer.marker
+    if human.turn?(current_marker)
+      human.move(board)
+      self.current_marker = computer.marker
     else
-      computer_moves
-      @current_marker = human.marker
-    end
-  end
-
-  def human_turn?
-    @current_marker == human.marker
-  end
-
-  def joinor(arr, join_char = ', ', last_word = 'or')
-    arr[arr.length - 1] = "#{last_word} #{arr[arr.length - 1]}" if arr.size > 1
-    arr.size == 2 ? arr.join(' ') : arr.join(join_char)
-  end
-
-  # rubocop:disable Metrics/AbcSize
-  def human_moves
-    key = nil
-    loop do
-      puts('Which square do you want to select?')
-      puts "Choose a square (#{joinor(board.unmarked_keys)}): "
-      puts('The numbers refer to the squares from left-right then top-bottom')
-      puts("Ex: top-left is '1', top-right is '3' and bottom-right is '9'")
-      key = gets.chomp.to_i
-      break if board.unmarked_keys.include?(key)
-      puts("That isn't a valid choice! Make sure that the square isn't taken")
-    end
-    board[key] = human.marker
-  end
-  # rubocop:enable Metrics/AbcSize
-
-  # 1st priority is to win, 2nd is to block human, 3rd is choose middle square,
-  # last option is random square
-  def computer_moves
-    key = comp_win_key || comp_block_key || middle_square_key ||
-          board.unmarked_keys.sample
-    board[key] = computer.marker
-  end
-
-  # iterates through unmarked squares, seeing if there are any winning combos
-  # where two squares in a line are marked with same marker and 3rd square in
-  # line is empty. If so returns key, and if not returns nil
-  def key_for_three_in_row(marker)
-    board.unmarked_keys.each do |key|
-      win_combos_with_key = Board::WINNING_COMBOS.select do |combo|
-        combo.include?(key)
-      end
-      win_combos_wout_key = win_combos_with_key.map { |combo| combo - [key] }
-      win_combos_wout_key.each do |array_check|
-        return key if board[array_check[0]] == marker &&
-                      board[array_check[1]] == marker
-      end
-    end
-    nil
-  end
-
-  def middle_square_key
-    return 5 if board.unmarked_keys.include?(5)
-    nil
-  end
-
-  def comp_win_key
-    key_for_three_in_row(computer.marker)
-  end
-
-  def comp_block_key
-    key_for_three_in_row(human.marker)
-  end
-
-  def display_result
-    if board.winning_marker == human.marker
-      puts "#{human.name} won!"
-    elsif board.winning_marker == computer.marker
-      puts "#{computer.name} won!"
-    else
-      puts "It's a tie!"
+      computer.move(board, human.marker)
+      self.current_marker = human.marker
     end
   end
 
@@ -340,10 +356,6 @@ class TTTGame
     answer == 'y'
   end
 
-  def clear
-    system 'clear'
-  end
-
   def reset_board
     board.reset
     @current_marker = first_move
@@ -352,11 +364,6 @@ class TTTGame
   def reset_scores
     human.score = 0
     computer.score = 0
-  end
-
-  def display_play_again_message
-    puts "Let's play again!"
-    puts ''
   end
 end
 
